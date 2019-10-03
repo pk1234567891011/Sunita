@@ -231,6 +231,12 @@ $(document).ready(function(){
 	$("#shipping_mobile").val('');
    }
   });
+    
+	
+	//Invoking the plugin
+	$(document).ready(function () {
+			$("#tracker1").progressTracker(sampleJson1);
+		});
 
  });
  function selectPaymentmMethod(){
@@ -239,6 +245,6 @@ $(document).ready(function(){
 	}
 	else{
 		alert("Please select Payment Method");
-		return "false";
+		return false;
 	}
  }

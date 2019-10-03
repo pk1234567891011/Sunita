@@ -72,7 +72,10 @@ class ProductController extends Controller
             'meta_keywords' => 'required',
             'is_featured' => 'required',
             'CID'=>'required',
-            'names'=>'required'
+            'names'=>'required',
+            'names'=>'required',
+            'drop'=>'required',
+            'value'=>'required'
         ]);
 
         Product::create($request->all());

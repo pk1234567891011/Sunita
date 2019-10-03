@@ -21,8 +21,7 @@
 	    	<div class="row">    		
 	    		<div class="col-sm-12">    			   			
 					<h2 class="title text-center">Contact <strong>Us</strong></h2>    			    				    				
-					<div id="gmap" class="contact-map">
-					</div>
+					
 				</div>			 		
 			</div>    	
     		<div class="row">  	
@@ -37,6 +36,12 @@
 				            </div>
 				            <div class="form-group col-md-6">
 				                <input type="email" name="email" class="form-control" required="required" placeholder="Email">
+							</div>
+							<div class="form-group col-md-6">
+				                <input type="text" name="contact" class="form-control" required="required" placeholder="Contact Number">
+							</div>
+							<div class="form-group col-md-6">
+				                <input type="text" name="note_admin" class="form-control" required="required" placeholder="Note Admin">
 				            </div>
 				            <div class="form-group col-md-12">
 				                <input type="text" name="subject" class="form-control" required="required" placeholder="Subject">

@@ -25,6 +25,8 @@ use App\Country;
 use App\UserOrder;
 use App\OrderDetails;
 use DB;
+use App\Wishlist;
+use App\Contact;
 class HomesController extends Controller
 {
     /**
@@ -33,7 +35,7 @@ class HomesController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {$category = Category::with('children')->get();
+    {   $category = Category::with('children')->get();
         $sliders = Banner::orderby('id', 'desc')->paginate(10);
         $images = Product_images::where('status', 'active')->get();
         $productsAll = Product::has('imgs')->get();
@@ -60,56 +62,72 @@ class HomesController extends Controller
                 'password' => 'required',
 
             ]);
-            $data = $request->all();
-            $usersCount = Users::where('email', $data['email'])->count();
-            if ($usersCount > 0) {
-                return redirect()->back()->with('flash_message_error', 'Email already exists');
-            } else { $user = new Users();
-                $user->firstname = $request->name;
-                $user->email = $request->email;
-                $user->password = $request->password;
-                $user->role_id = 5;
-                $user->save();
-
-                $user_data = array(
-                    'email' => $request->get('email'),
-                    'password' => $request->get('password'),
+        $data = $request->all();
+        $usersCount = Users::where('email', $data['email'])->count();
+        if ($usersCount > 0) {
+            return redirect()->back()->with('flash_message_error', 'Email already exists');
+        } 
+        else {
+            $email=$data['email'];
+            $messageData=[
+                'name'=>$data['name'],
+                'email'=>$data['email'],
+                'password'=>$data['password'],
+                ];
+            Mail::send('emails.register', $messageData, function ($message) use ($email) {
+                    $message->to($email)->subject('Registration successful');
+                });
+            Mail::send('emails.admin', $messageData, function ($message) use ($email) {
+                    $message->to("kumaripri6@gmail.com")->subject('User Details');
+                });
+            $user = new Users();
+            $user->firstname = $request->name;
+            $user->email = $request->email;
+            $user->password = $request->password;
+            $user->role_id = 5;
+            $user->save();
+                
+            $user_data = array(
+                'email' => $request->get('email'),
+                'password' => $request->get('password'),
                 );
-
-                if (Auth::attempt($user_data)) {
-                    Session::put('frontSession', $user_data['email']);
-                    return redirect('homes');
+                
+            if (Auth::attempt($user_data)) {
+                Session::put('frontSession', $user_data['email']);
+                return redirect('homes');
                 }
+               
+                
             }
         }
         return view('Eshopper.login-register');
 
     }
     public function forgotPassword(Request $request)
-    {if ($request->isMethod('post')) {
-        $data = $request->all();
-        $usersCount = Users::where('email', $data['email'])->count();
-        if ($usersCount == 0) {
-            return redirect()->back()->with('flash_message_error', 'Email does not exists');
+    {   if ($request->isMethod('post')) {
+            $data = $request->all();
+            $usersCount = Users::where('email', $data['email'])->count();
+            if ($usersCount == 0) {
+                return redirect()->back()->with('flash_message_error', 'Email does not exists');
+            }
+            $userDetail = Users::where('email', $data['email'])->first();
+            $random_password = str_random(8);
+            $new_password = bcrypt($random_password);
+            Users::where('email', $data['email'])->update(['password' => $new_password]);
+            $email = $data['email'];
+
+            $name = $userDetail->name;
+            $messageData = [
+                'email' => $email,
+                'name' => $name,
+                'password' => $random_password,
+            ];
+            Mail::send('emails.forgotpassword', $messageData, function ($message) use ($email) {
+                $message->to($email)->subject('New Password');
+
+            });
+            return redirect('login-register')->with('flash_message_success', 'Check your email for new password');
         }
-        $userDetail = Users::where('email', $data['email'])->first();
-        $random_password = str_random(8);
-        $new_password = bcrypt($random_password);
-        Users::where('email', $data['email'])->update(['password' => $new_password]);
-        $email = $data['email'];
-
-        $name = $userDetail->name;
-        $messageData = [
-            'email' => $email,
-            'name' => $name,
-            'password' => $random_password,
-        ];
-        Mail::send('emails.forgotpassword', $messageData, function ($message) use ($email) {
-            $message->to($email)->subject('New Password');
-
-        });
-        return redirect('login-register')->with('flash_message_success', 'Check your email for new password');
-    }
         return view('Eshopper.forgot');
     }
     public function checkslogin(Request $request)
@@ -127,7 +145,8 @@ class HomesController extends Controller
         if (Auth::attempt($user_data)) {
             Session::put('frontSession', $user_data['email']);
             return redirect('homes');
-        } else {
+        } 
+        else {
             return back()->with('error', 'Wrong Login Details');
         }
 
@@ -141,10 +160,12 @@ class HomesController extends Controller
     {
         Auth::logout();
         Session::forget('frontSession');
+        Session::forget('CouponAmount');
+        Session::forget('CouponCode');
         return redirect('login-register');
     }
     public function products($url = null)
-    {$categoryDetails = Category::where(['name' => $url])->first();
+    {   $categoryDetails = Category::where(['name' => $url])->first();
         $categoryCount = Category::where(['name' => $url])->count();
         if ($categoryCount == 0) {
             abort(404);
@@ -160,7 +181,7 @@ class HomesController extends Controller
             }
             $categories=Product_Categories::whereIn('category_id', $cat_ids)->get();
             
-           // $productsAll=Product::whereIn('id', $cat_ids)->get();
+           
             foreach ($categories as $key => $product) {
                 $productDetail = Product::where('id', $product->product_id)->first();
                 $image = Product_images::where('product_id', $productDetail->id)->first();
@@ -173,7 +194,8 @@ class HomesController extends Controller
 
             
 
-        } else {
+        } 
+        else {
             $productCat = Product_categories::where(['category_id' => $categoryDetails->id])->get();
 
             $productsAll = Product::whereIn('id', $productCat->pluck('product_id'))->get();
@@ -201,10 +223,10 @@ class HomesController extends Controller
     public function prod($id)
     {
         $productDetails = Product::where('id', $id)->first();
-        //$product = Product::where(['id' => $productCat->product_id])->get();
+    
         $category = Category::with('children')->get();
         $sliders = Banner::orderby('id', 'desc')->paginate(10);
-        //$images = Product_images::where('status', 'active')->get();
+        
         $recommended=Product::has('imgs')->where('id','!=',$productDetails->id)->get();
         
         $product_attributes_asso = Product_attributes_assoc::where('product_id', $productDetails->id)->first();
@@ -215,12 +237,12 @@ class HomesController extends Controller
             ->get();
         $product_image = Product_images::where('product_id', $productDetails->id)->first();
 
-        //$image = Product_images::where('image_name', $product_image->pluck('image_name'))->get();
+       
 
         return view('Eshopper.details')->with(compact('category', 'productDetails', 'product_image', 'product_attributes', 'product_attribute_value','recommended'));
     }
     public function account()
-    {$user_id = Auth::user()->id;
+    {   $user_id = Auth::user()->id;
         $add = Address::where('userId', $user_id)->get();
         $paginate = Address::latest()->paginate(3);
         $userInfo = Users::where('id', $user_id)->first();
@@ -262,7 +284,8 @@ class HomesController extends Controller
             $new_password = bcrypt($data['new_pwd']);
             Users::where('id', Auth::User()->id)->update(['password' => $new_password]);
             return redirect()->back()->with('flash_message_success', 'Password updated Successfuully');
-        } else {
+        } 
+        else {
             return redirect()->back()->with('flash_message_success', 'Current password is incorrect');
         }
     }
@@ -271,55 +294,119 @@ class HomesController extends Controller
         Session::forget('CouponAmount');
         Session::forget('CouponCode');
         $data = $request->all();
-        if (empty($data['user_email'])) {
-            $data['user_email'] = "";
-        }
-        $session = Session::get('session');
-
-        if (empty($session)) {
-            $session = str_random(40);
-            Session::put('session', $session);
-        }
-        $countProduct = Cart::where(['product_id' => $data['product_id'], 'session' => $session])->count();
+        $user_email=Auth::User()->email;
+        //print_r($data);
+       // die;
+        $countProduct = Cart::where(['product_id' => $data['product_id'], 'user_email' => $user_email])->count();
         if ($countProduct > 0) {
             return redirect()->back()->with('flash_message_error', 'Product already exists in the cart');
         } else {
             $getSku = Product::where('id', $data['product_id'])->first();
-            Cart::insert(['product_id' => $data['product_id'], 'product_name' => $data['product_name'], 'product_code' => $getSku->sku, 'price' => $data['price'], 'quantity' => $data['quantity'], 'user_email' => $data['user_email'], 'session' => $session]);
+            Cart::insert(['product_id' => $data['product_id'], 'product_name' => $data['product_name'], 'product_code' => $getSku->sku, 'price' => $data['price'], 'quantity' => $data['quantity'], 'user_email' => $user_email]);
         }
         return redirect('cart')->with('flash_message_success', 'Product has been added to cart|');
 
     }
+    public function addtowishlist(Request $request)
+    {
+       // Session::forget('CouponAmount');
+        //Session::forget('CouponCode');
+        $data = $request->all();
+        $user_email=Auth::User()->email;
+        $user_id=Auth::User()->id;
+       //$data=$request->all();
+       
+        $countProduct = Wishlist::where(['product_id' => $data['product_id'], 'user_id' => $user_id])->count();
+  
+        if ($countProduct > 0) {
+            return redirect()->back()->with('flash_message_error', 'Product already exists in the cart');
+        } else {
+            Wishlist::insert(['product_id' => $data['product_id'],'user_id'=>$user_id]);
+        }
+        return redirect('wishlist')->with('flash_message_success', 'Product has been added to wishlist|');
+
+    }
+
     public function cart(Request $request)
-    {  
+    {   
         $userId = Auth::User()->id;
          if(Auth::check()){
-            $session_id=Session::get('session');
+           
         $user_email=Auth::User()->email;
-        Cart::where(['session'=>$session_id])->update(['user_email'=>Auth::User()->email]);
         $userCart = Cart::where('user_email', $user_email)->get();
 
 
         }
-        else{
-            $session = Session::get('session');
-            $userCart = Cart::where('session', $session)->get();
-        }
-        
+      
        
         foreach ($userCart as $key => $product) {
             $productDetail = Product::where('id', $product->product_id)->first();
             $image = Product_images::where('product_id', $productDetail->id)->first();
             $userCart[$key]->image = $image->image_name;
         }
-        
+       
         return view('Eshopper.cart', compact('userCart'));
+    }
+    public function wishlist(Request $request)
+    {  
+        $user_id = Auth::User()->id;
+         if(Auth::check()){
+           
+            $user_email=Auth::User()->email;
+            $userWishlist = Wishlist::where('user_id', $user_id)->get();
+
+            $productsDetails = Product::whereIn('id', $userWishlist->pluck('product_id'))->get();
+        }
+        // $productDetails = Product::where('id', $userWishlist->product_id)->first();
+        
+       
+        foreach ($userWishlist as $key => $product) {
+            $productDetail = Product::where('id', $product->product_id)->first();
+            $image = Product_images::where('product_id', $productDetail->id)->first();
+            $userWishlist[$key]->image = $image->image_name;
+            $userWishlist[$key]->price = $productDetail->price;
+            $userWishlist[$key]->product_code = $productDetail->sku;
+            $userWishlist[$key]->name = $productDetail->name;
+           
+        }
+       
+        return view('Eshopper.wishlist', compact('userWishlist'));
     }
     public function deleteCartProduct($id)
     {   Session::forget('CouponAmount');
         Session::forget('CouponCode');
         Cart::where('id', $id)->delete();
         return redirect('cart')->with('flash_message_success', 'Product has been delete from cart|');
+    }
+    public function deleteWishlistProduct($id)
+    {   Session::forget('CouponAmount');
+        Session::forget('CouponCode');
+        wishlist::where('id', $id)->delete();
+        return redirect('wishlist')->with('flash_message_success', 'Product has been delete from wishlist|');
+    }
+    public function moveToCart($id)
+    {
+        Session::forget('CouponAmount');
+        Session::forget('CouponCode');
+        
+        $user_email=Auth::User()->email;
+        $user_id=Auth::User()->id;
+        
+        $getWishlistDetails = Wishlist::where('id', $id)->first();
+        $getProduct = Product::where('id', $getWishlistDetails->product_id)->first();
+        
+        $countProduct = Cart::where(['product_id' => $getProduct->id, 'user_email' => $user_email])->count();
+     
+        if ($countProduct > 0) {
+           return redirect()->back()->with('flash_message_error', 'Product already exists in the cart');
+        } 
+        else {
+            Cart::insert(['product_id' => $getProduct->id, 'product_name' => $getProduct->name, 'product_code' => $getProduct->sku, 'price' => $getProduct->price, 'quantity' => $getProduct->quantity, 'user_email' => $user_email]);
+            wishlist::where('product_id',$getProduct->id)->delete();
+        }
+        
+        return redirect('wishlist')->with('flash_message_success', 'Product has been moved to cart|');
+
     }
     public function updateCartQuantity($id, $quantity)
     {
@@ -341,6 +428,7 @@ class HomesController extends Controller
         Session::forget('CouponCode');
         $data = $request->all();
         $userId = Auth::User()->id;
+        $user_email= Auth::User()->email;
         $couponCount = Coupon::where('code', $data['coupon'])->count();
         if ($couponCount == 0) {
             return redirect()->back()->with('flash_message_error', 'Invalid coupon code');
@@ -356,12 +444,13 @@ class HomesController extends Controller
 
             } else {
                
-                $session = Session::get('session');
-                $userCart = Cart::where('session', $session)->get();
+               
+                $userCart = Cart::where('user_email', $user_email)->get();
                 $total_amount = 0;
                 foreach ($userCart as $item) {
                     $total_amount = $total_amount + ($item->price * $item->quantity);
                 }
+                
                 if (empty($couponUsedDetails->id)) {
 
                     $available_coupon = $couponDetails->no_of_uses;
@@ -405,6 +494,7 @@ class HomesController extends Controller
                 'message'=>'required',
             ]);
             $data=$request->all();
+            
             $email="kumaripri6@gmail.com";
             $messageData=[
                 'name'=>$data['name'],
@@ -414,22 +504,20 @@ class HomesController extends Controller
             ];
             Mail::send('emails.enquiry', $messageData, function ($message) use ($email) {
                 $message->to($email)->subject('New Enquiry');
+               
     
-        });
-        return redirect()->back()->with('flash_message_success', 'Thanks for your enquiry.We will get back to you soon');
+            });
+            Contact::insert(['name'=>$data['name'],'email'=>$data['email'],'contact_no'=>$data['contact'],'message'=>$data['message'],'created_by'=>Auth::User()->id,'note_admin'=>$data['note_admin']]);
+            return redirect()->back()->with('flash_message_success', 'Thanks for your enquiry.We will get back to you soon');
 
-      }
+        }
      return view('Eshopper.contact'); 
        
     }
     public function checkout(Request $request)
     {  $user_id=Auth::User()->id;
        $userAddress=Address::where('userId',$user_id)->first();
-      /* if(empty($userAddress)){
-        return redirect('account')->with('flash_message_error', 'Please add address details');
-
-
-       } */
+      
        $userDetails=Users::where('id',$user_id)->first();
        $countries=Country::all();
        $shippingCount=DeliveryAddresses::where('userId',$user_id)->count();
@@ -439,8 +527,7 @@ class HomesController extends Controller
        {
            $shippingDetails=DeliveryAddresses::where('userId',$user_id)->first();
        }
-       $session=Session::get('session');
-       Cart::where('session',$session)->update(['user_email'=>$userDetails->email]);
+       
        if($request->isMethod('post')){
            $data=$request->all();
            if(empty($data['billing_name']) || empty($data['billing_address']) || empty($data['billing_city']) ||empty($data['billing_pincode']) ||empty($data['billing_mobile']) ||
@@ -492,14 +579,14 @@ class HomesController extends Controller
        return view('Eshopper.checkout',compact('userAddress','userDetails','countries','shippingDetails'));
     }
     public function orderReview(){
-       $user_id=Auth::User()->id;
+        $user_id=Auth::User()->id;
        
-       $user_email=Auth::User()->email;
-       $userAddress=Address::where('userId',$user_id)->first();
-      
+        $user_email=Auth::User()->email;
+        $userAddress=Address::where('userId',$user_id)->first();
+        
         $userDetails=Users::where('id',$user_id)->first();
-       $shippingDetails=DeliveryAddresses::where('userId',$user_id)->first();
-       $userCart = Cart::where('user_email', $user_email)->get();
+        $shippingDetails=DeliveryAddresses::where('userId',$user_id)->first();
+        $userCart = Cart::where('user_email', $user_email)->get();
        foreach ($userCart as $key => $product) {
            $productDetail = Product::where('id', $product->product_id)->first();
            $image = Product_images::where('product_id', $productDetail->id)->first();
@@ -515,7 +602,7 @@ class HomesController extends Controller
         $user_id=Auth::User()->id;
         $user_email=Auth::User()->email;
         if(empty(Session::get('Couponcode'))){
-            $coupon_id="";
+            $coupon_id=NULL;
         }
             
         else{
@@ -532,7 +619,6 @@ class HomesController extends Controller
         $user_order->transcation_id=mt_rand(4342,434346);
         $user_order->status="pending";
         $user_order->grand_total=$data['grand_total'];
-        //$user_order->shipping_charges=$data['shipping_charges'];
         $user_order->coupon_id=$coupon_id;
         $user_order->billing_address=$billingDetails->address;
         $user_order->billing_city=$billingDetails->city;
@@ -556,7 +642,108 @@ class HomesController extends Controller
             $orderDetails->amount=$pro->price;
             $orderDetails->save();
         }
+        Session::put('order_id',$order_id);
+        Session::put('grand_total',$data['grand_total']);
+        if($data['payment_method']=='COD'){
+            $email=$user_email;
+            $productDetails=UserOrder::with('orders')->where('id',$order_id)->first();
+            $productDetails=json_decode(json_encode($productDetails),true);
+            $user_addresss=Address::where('userId', $user_id)->first();
+             $mytime =date("Y-m-d h:i:s a", time());
+             
+             
+            //  echo "<pre>";
+            //   print_r($productDetails);
+            //  die;
+            // $order=UserOrder::where('user_id',Auth::User()->id)->first();
+            // $user_details=UserOrder::where('user_id',Auth::User()->id)->get();
+            
+            // $product=UserOrder::has('name')->get();
+            $messageData=[
+                'email'=>$user_email,
+                'productDetails'=>$productDetails,
+                'user_addresss'=>$user_addresss,
+                'mytime'=>$mytime
+               
+            ];
+          
+            Mail::send('emails.order', $messageData,function ($message) use ($email) {
+                $message->to($email)->subject('Order Details');
+            });
+            return redirect('thanks');
+        }
+       else{
+        return redirect('paypal');
+       }
+        
     }
+    public function thanks(Request $request){
+        $user_email=Auth::User()->email;
+        $userCart = Cart::where('user_email', $user_email)->delete();
+       
+        return view("orders.thanks",compact('$user_details','$order_details','$product'));
+    }
+    public function paypal(Request $request){
+        $user_email=Auth::User()->email;
+        $userCart = Cart::where('user_email', $user_email)->delete();
+        $email=$user_email;
+        $productDetails=UserOrder::with('orders')->where('id',$order_id)->first();
+        $productDetails=json_decode(json_encode($productDetails),true);
+        $user_addresss=Address::where('userId', $user_id)->first();
+       
+        $messageData=[
+            'email'=>$user_email,
+            'productDetails'=>$productDetails,
+            'user_addresss'=>$user_addresss,
+            
+        ];
+      
+        Mail::send('emails.order', $messageData,function ($message) use ($email) {
+            $message->to($email)->subject('Order Details');
+        });
+        return view("orders.paypal");
+    }
+    public function userOrders(){
+        $user_id=Auth::User()->id;
+        $orders=UserOrder::with('orders')->where('user_id',$user_id)->orderBy('id','DESC')->get();
+       
+        return view('orders.users_orders',compact('orders'));
+    }
+    public function userOrderDetails($order_id){
+        $user_id=Auth::User()->id;
+        $orderDetails=UserOrder::with('orders')->where('id',$order_id)->first();
+    
+        return view('orders.user_order_details',compact('orderDetails'));
+
+    }
+    public function track(){
+        return view('Eshopper.track');
+    }
+   public function trackOrder(Request $request){
+       $request->validate([
+        'order_id'=>'required|numeric',
+        'email'=>'required'
+       ]);
+       $user_email=Auth::User()->email;
+       $user_id=Auth::User()->id;
+       $data=$request->all();
+       
+       $order_id=$data['order_id'];
+       $order_details=UserOrder::where('id',$order_id)->first();
+       if(empty($order_details)){
+          return redirect()->back()->with('flash_message_error','Invalid Order id');
+       }
+       else{
+       $user_details=Users::where('id',$order_details->user_id)->first();
+       if($user_details->email==$data['email']){
+          return view('Eshopper.track_order',compact('order_details'));
+       }
+       else{
+        return redirect()->back()->with('flash_message_error','Invalid Order id or email');
+       }
+    }
+      // return redirect('/track_details');
+   }
     /**
      * Show the form for editing the specified resource.
      *

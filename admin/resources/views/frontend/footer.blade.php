@@ -133,9 +133,11 @@
 					<div class="col-sm-3 col-sm-offset-1">
 						<div class="single-widget">
 							<h2>About Shopper</h2>
-							<form action="#" class="searchform">
-								<input type="text" placeholder="Your email address" />
-								<button type="submit" class="btn btn-default"><i class="fa fa-arrow-circle-o-right"></i></button>
+							<form action="javascript:void(0);" class="searchform">
+							{{ csrf_field()}}
+								<input onfocus="enableSubscriber();" onfocusout="chkSubscriber();" name="email"  id="email" type="email" placeholder="Your email address" required=""/>
+								<button  onclick="chkSubscriber();addSubscriber();" id="btnSubmit" type="submit" class="btn btn-default"><i class="fa fa-arrow-circle-o-right"></i></button>
+								<div id="statusSubscribe" style="display:none;padding-top:5px"></div>
 								<p>Get the most recent updates from <br />our site and be updated your self...</p>
 							</form>
 						</div>
@@ -155,4 +157,53 @@
 		</div>
 		
 	</footer><!--/Footer-->
+	<script>
+	function chkSubscriber(){
+		var subscriber_email=$('#email').val();
+		$.ajax({
+			type:'post',
+			url:'/check-subscriber-email',
+			data:{subscriber_email:subscriber_email},
+			success:function(resp){
+				if(resp=="exists"){
+					// alert("Email already exists");
+					
+					$('#statusSubscribe').show();
+					$('#btnSubmit').hide();
+				    $('#statusSubscribe').html("<span><font color='red'>Error:Email already exists</font></span>");
+				}
+			},
+			
+		});
+	
+	 }
+	 function addSubscriber(){
+		var subscriber_email=$('#email').val();
+		$.ajax({
+			type:'post',
+			url:'/add-subscriber-email',
+			data:{subscriber_email:subscriber_email},
+			success:function(resp){
+				if(resp=="exists"){
+					// alert("Email already exists");
+					
+					$('#statusSubscribe').show();
+					$('#btnSubmit').hide();
+				    $('#statusSubscribe').html("<span><font color='red'>Email already exists</font></span>");
+				}
+				else if(resp=="Saved"){
+					$('#statusSubscribe').show();
+				    $('#statusSubscribe').html("<span><font color='green'>Thanks for subscribing</font></span>");
+				}
+			},
+			
+		});
+	
+	 }
+	 function enableSubscriber(){
+		
+		$('#btnSubmit').show();
+		$('#statusSubscribe').hide();
+	 }
+	</script>
 	
