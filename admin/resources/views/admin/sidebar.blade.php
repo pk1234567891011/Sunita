@@ -42,9 +42,12 @@
             <li class="active"><a href="{{route('product.index')}}"><i class="fa fa-circle-o"></i> Product Management</a></li>
             <li class="active"><a href="{{route('product_attributes.index')}}"><i class="fa fa-circle-o"></i> Product Attributes</a></li>
             <li class="active"><a href="{{route('coupon.index')}}"><i class="fa fa-circle-o"></i> Coupon Management</a></li>
-            <li class="active"><a href="{{url('order')}}"><i class="fa fa-circle-o"></i> Order Management</a></li>
+            <li class="active"><a href="{{url('order')}}"><i class="fa fa-circle-o"></i> Track Order</a></li>
             <li class="active"><a href="{{url('contact')}}"><i class="fa fa-circle-o"></i> Contact Management</a></li>
             <li class="active"><a href="{{url('view-newsletter-subscribers')}}"><i class="fa fa-circle-o"></i> Newsletter Management</a></li>
+            <li class="active"><a href="{{url('cms')}}"><i class="fa fa-circle-o"></i> CMS Management</a></li>
+            <li class="active"><a href="{{url('cms')}}"><i class="fa fa-circle-o"></i> Customer Details</a></li>
+
           </ul>
         </li>
 view-newsletter-subscribers

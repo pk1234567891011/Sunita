@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Configuration;
-use DB;
-class ConfigurationController extends Controller
+use App\cms;
+class CMSController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -14,11 +13,8 @@ class ConfigurationController extends Controller
      */
     public function index()
     {
-       //$configurations=DB::table('configuration')
-             //->latest()->paginate(2);
-        $configuration= Configuration::latest()->paginate(2);
-           
-        return view('configuration.index',compact('configuration'))->with('i',(request()->input('page',1)-1)*2);
+        $cms_details=cms::latest()->paginate(5);
+        return view('cms.index',compact('cms_details'));
     }
 
     /**
@@ -28,8 +24,7 @@ class ConfigurationController extends Controller
      */
     public function create()
     {
-        $configuration=Configuration::all();
-        return view('configuration.create');
+        return view('cms.create');
     }
 
     /**
@@ -41,13 +36,13 @@ class ConfigurationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-
-            'conf_key'=>'required',
-            'conf_value'=>'required',
-            'status'=>'required'
+            'title'=>'required',
+            'url'=>'required',
+            'description'=>'required',
+            'status'=>'required|numeric'
         ]);
-        Configuration::create($request->all());
-        return redirect()->route('configuration.index')->with('success','Configuration created successfully');
+        cms::create($request->all());
+        return redirect('cms')->with('success', 'Cms created successfully');;
 
     }
 
@@ -70,8 +65,8 @@ class ConfigurationController extends Controller
      */
     public function edit($id)
     {
-        $configuration = Configuration::find($id);
-        return view('configuration.edit',compact('configuration'));
+       $cms=cms::find($id);
+       return view('cms.edit',compact('cms'));
     }
 
     /**
@@ -82,16 +77,25 @@ class ConfigurationController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
-        $configuration = Configuration::find($id);
-        $request->validate([
-
-            'conf_key'=>'required',
-            'conf_value'=>'required',
-            'status'=>'required'
+        {$request->validate([
+            'title'=>'required',
+            'url'=>'required',
+            'description'=>'required',
+            'status'=>'required|numeric'
         ]);
-        Configuration::find($id)->update($request->all());
-        return redirect()->route('configuration.index')->with('success','Configuration updated successfully');
+        cms::find($id)->update($request->all());
+        return redirect('cms')->with('success', 'Cms updated successfully');;
+    }
+    public function cmsPage($url){
+        $cmsCount=cms::where(['url'=>$url,'status'=>1])->count();
+        if($cmsCount>0){
+            $cms_details=cms::where('url',$url)->first();
+
+        }
+        else{
+            abort(404);
+        }
+        return view('cms.cms_pages',compact('cms_details'));
     }
 
     /**
@@ -102,7 +106,8 @@ class ConfigurationController extends Controller
      */
     public function destroy($id)
     {
-        Configuration::find($id)->delete();
-        return redirect()->route('configuration.index')->with('success','Configuration deleted successfully');
+        cms::find($id)->delete();
+        return redirect()->back()->with('success', 'Cms deleted successfully');;
+
     }
 }

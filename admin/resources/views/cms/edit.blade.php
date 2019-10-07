@@ -1,8 +1,9 @@
 @extends('admin.admin_template')
 @section('content')
-<form method="post" action="{{url('configuration')}}" enctype="multipart/form-data">
-    {{csrf_field()}}
-    @if(count($errors)>0)
+<form action="{{url('cms', [$cms->id])}}" method="POST">
+    <input type="hidden" name="_method" value="PUT">
+ 	{{csrf_field()}}
+ 	@if(count($errors)>0)
         <div class="alert alert-danger">
             <strong>Whoops!!!</strong> There are some problems with your inputs.</br>
             <ul>
@@ -15,27 +16,30 @@
     <div class="row">
         <div class="col-xs-12">
             <div class="form-group">
-                <strong>Configuration Key :</strong>
-                {!! Form::text('conf_key',null,['placeholder'=>'Configuration_key','class'=>'form-control'])!!}
+                <strong>Title :</strong>
+                <input type="text" class="form-control" name="title" value="{{$cms->title}}"/>
             </div>
         </div>
         <div class="col-xs-12">
             <div class="form-group">
-                <strong>Configuration Value :</strong>
-                {!! Form::text('conf_value',null,['placeholder'=>'Configuration_value','class'=>'form-control'])!!}
+                <strong>Description :</strong>
+                <input type="text" class="form-control" name="description" value="{{$cms->description}}"/>
+            </div>
+        </div>
+        <div class="col-xs-12">
+            <div class="form-group">
+                <strong>URL :</strong>
+                <input type="text" class="form-control" name="url" value="{{$cms->url}}"/>
             </div>
         </div>
         <div class="col-xs-12">
             <div class="form-group">
                 <strong>Status :</strong>
-                <input type="radio" id="active" name="status" value="active">
-                <label for="active">Active</label>
-                <input type="radio" id="inactive" name="status" value="inactive">
-                <label for="active">InActive</label>
+                <input type="text" class="form-control" name="status" value="{{$cms->status}}"/>            </div>
             </div>
         </div>
         <div class="col-xs-12">
-            <a class="btn btn-xs btn-success" href="{{route('configuration.index')}}">Back</a>
+            <a class="btn btn-xs btn-success" href="{{route('cms.index')}}">Back</a>
             <button type="submit" class="btn btn-xs btn-primary" name="button">Submit</button>
         </div>
     </div>

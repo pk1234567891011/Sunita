@@ -30,8 +30,8 @@ Auth::routes();
 Route::view('admin/adminlogin','admin.adminlogin');
 Route::get('/main', 'MainController@index');
 Route::post('/main/checklogin', 'MainController@checklogin');
- Route::get('main/successlogin', 'MainController@successlogin');
- Route::get('logout', 'MainController@logout');
+Route::get('main/successlogin', 'MainController@successlogin');
+Route::get('logout', 'MainController@logout');
 Auth::routes();
 Route::view('register','register');
 
@@ -46,7 +46,7 @@ Route::resource('product','ProductController');
 // Route::post('product/insert', 'ProductController@insert')->name('product.insert');
 // Route::resource('product_images','Product_ImageController');
 //Route::get('product/create/{id}', 'ProductController@getValues');
-//Route::get('myform/ajax/{id}',array('as'=>'myform.ajax','uses'=>'ProductController@myformAjax'));
+Route::get('myform/ajax/{id}',array('as'=>'myform.ajax','uses'=>'ProductController@myformAjax'));
 Route::resource('coupon','CouponController');
 Route::view('Eshopper','frontend.home');
 Route::resource('homes','HomesController');
@@ -94,9 +94,11 @@ Route::group(['middleware'=>['frontlogin']],function(){
     Route::match(['GET','POST'],'track_details','HomesController@trackOrder');
     Route::post('/update-user-pwd','HomesController@updatePassword');
     Route::resource('address','AddressController');
-
+    
+    Route::match(['get','post'],'/page/{url}','CMSController@cmsPage');
    
 });
+Route::resource('/cms','CMSController');
 Route::resource('order','OrdersController');
 Route::resource('contact','ContactController');
 

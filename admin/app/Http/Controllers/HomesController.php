@@ -36,7 +36,10 @@ class HomesController extends Controller
      */
     public function index()
     {   $category = Category::with('children')->get();
-        $sliders = Banner::orderby('id', 'desc')->paginate(10);
+        $sliders = Banner::where('status','active')->orderby('id', 'desc')->paginate(10);
+        // echo "<pre>";
+        // print_r($sliders);
+        // die;
         $images = Product_images::where('status', 'active')->get();
         $productsAll = Product::has('imgs')->get();
         return view('Eshopper.first', compact('sliders', 'category', 'images', 'productsAll'));
@@ -227,11 +230,11 @@ class HomesController extends Controller
         $category = Category::with('children')->get();
         $sliders = Banner::orderby('id', 'desc')->paginate(10);
         
-        $recommended=Product::has('imgs')->where('id','!=',$productDetails->id)->get();
+        //$recommended=Product::has('imgs')->where('id','!=',$productDetails->id)->get();
         
-        $product_attributes_asso = Product_attributes_assoc::where('product_id', $productDetails->id)->first();
-        $product_attributes = Product_attributes::where('id', $product_attributes_asso->product_attribute_id)->first();
-        $product_attribute_value = Product_attribute_values::where('product_attribute_id', $product_attributes->id)->first();
+        //$product_attributes_asso = Product_attributes_assoc::where('product_id', $productDetails->id)->first();
+       // $product_attributes = Product_attributes::where('id', $product_attributes_asso->product_attribute_id)->first();
+       // $product_attribute_value = Product_attribute_values::where('product_attribute_id', $product_attributes->id)->first();
 
         $productsAll = Product::has('imgs')
             ->get();
@@ -472,11 +475,10 @@ class HomesController extends Controller
                     $couponUsedDetails->couponcode = $data['coupon'];
                     $couponUsedDetails->remCoupon = $remCoupon;
                     $couponUsedDetails->save();
-                    Session::put('CouponAmount', $couponAmount);
-                    Session::put('Couponcode', $data['coupon']);
-                    return redirect()->back()->with('flash_message_success', 'Discount Coupon is applied successfully.You are availing discount');
-
                 }
+                Session::put('CouponAmount', $couponAmount);
+                Session::put('Couponcode', $data['coupon']);
+                
                 return redirect()->back()->with('flash_message_success', 'Discount Coupon is applied successfully.You are availing discount');
 
             }
@@ -685,6 +687,9 @@ class HomesController extends Controller
     }
     public function paypal(Request $request){
         $user_email=Auth::User()->email;
+        $user_id=Auth::User()->id;
+        $order_id=Session::get('order_id');
+        //Session::put('grand_total',$data['grand_total']);
         $userCart = Cart::where('user_email', $user_email)->delete();
         $email=$user_email;
         $productDetails=UserOrder::with('orders')->where('id',$order_id)->first();
