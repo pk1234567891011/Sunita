@@ -21,7 +21,7 @@
             <div id="tb" >
               <table id="cart_details" style="width:151%;" border="1" >
                 <tr>
-                  <th>Order No</th>
+                  <th>Serial No</th>
                   <th>Product Id</th>
                   <th>Quantity</th> 
                   <th>Unit Price</th>

@@ -44,7 +44,7 @@
 						<h2>Login to your account</h2>
 						<form id="login" name="login" method="POST" action="{{url('/login-register/checklogin')}}" >
 						{{ csrf_field() }}
-							<input id="email" name="email" type="email" placeholder="Email Address" />
+							<input  type="email" placeholder="Email Address" required/>
 							<input id="password" name="password" type="password" placeholder="Password" />
 							<span>
 								<input type="checkbox" class="checkbox"> 
